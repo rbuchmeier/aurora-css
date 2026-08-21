@@ -16,8 +16,8 @@ The ribbon is ~150 thin vertical "curtain slice" divs. Each slice:
 - is aimed along the path's analytic tangent via `rotateY(atan2(...))`,
   folded into ±90° with `mod()` so return legs of the snake get the correct
   slant, and clamped so fold apexes stack into soft bright columns;
-- draws the aurora look with a vertical gradient (pink fringe → bright green
-  edge → teal → violet fade), horizontal mask feathering so slices melt
+- draws the aurora look with a vertical gradient (blue fringe → bright green
+  edge → pink fade), horizontal mask feathering so slices melt
   together, pseudo-random ray heights, and distance haze via opacity.
 
 Depth (z) increases monotonically along the path, so DOM order equals depth

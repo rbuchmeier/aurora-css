@@ -125,17 +125,17 @@
          The clamp keeps fold-apex slices from going knife-edge-on: they
          stack into a soft bright column instead of a hard line. */
 
-    /* bright green lower edge, pink fringe underneath, fading to violet above;
+    /* bright green lower edge, blue fringe underneath, fading to pink above;
        curtain height (ragged ray tops + tail taper) via background-size */
     background:
       linear-gradient(to top,
-        rgba(255,  90, 190, 0)    0%,
-        rgba(255,  90, 190, .45)  4%,
+        rgba( 70, 130, 255, 0)    0%,
+        rgba( 70, 130, 255, .45)  4%,
         rgba( 90, 255, 180, .95)  9%,
         rgba( 70, 245, 185, .55) 24%,
-        rgba( 45, 205, 230, .28) 46%,
-        rgba(115,  90, 255, .09) 72%,
-        rgba(115,  90, 255, 0)   94%)
+        rgba(200, 130, 225, .26) 46%,
+        rgba(255,  90, 190, .09) 72%,
+        rgba(255,  90, 190, 0)   94%)
       bottom / 100% calc((300px + 160px * var(--r)) * var(--taper)) no-repeat;
 
     /* feather the vertical sides so slices melt together */
