@@ -28,19 +28,28 @@ so the bright lower line stays unobstructed along the entire wave.
 The rendering itself needs only a loop that stamps out the slice divs; the
 rest of the JavaScript is the optional config panel below.
 
-## Config modal
+## Config modals
 
-Press <kbd>c</kbd> to open the in-page config panel. Sliders update the ribbon
-live: slice count, camera focal length, tail altitude, approach climb, and the
-wave shapes. Three color checkboxes toggle the green body, blue fringe, and
+Press <kbd>c</kbd> for the aurora panel or <kbd>s</kbd> for the sky panel.
+Sliders update the scene live. The aurora panel drives the ribbon: slice
+count, camera focal length, tail altitude, approach climb, and the wave
+shapes. Three color checkboxes toggle the green body, blue fringe, and
 pink tops. The ribbon's shape never changes — the gradient's alpha profile is
 fixed, and each stop's RGB is a priority-weighted blend of whichever colors
 are on (each stop falls back to the next color in its chain, so e.g. blue and
 pink meet where green used to be, and green alone fills the whole curtain).
-All three off hides the aurora entirely. <kbd>Enter</kbd> saves the values to
-`localStorage` (they survive
-reloads), <kbd>Esc</kbd> reverts to whatever was active when the panel opened.
-`index.html#config` deep-links to the open panel.
+All three off hides the aurora entirely.
+
+The sky panel drives everything else: moon phase (a shadow disc sweeps across
+the lit disc — full at the slider's ends, new in the middle, crescents and
+gibbous in between), twilight level (a dusk gradient rising from the horizon;
+stars dim slightly as it brightens), star brightness and density, and a
+mountains on/off toggle.
+
+Both panels share the same lifecycle: <kbd>Enter</kbd> saves the values to
+`localStorage` (they survive reloads), <kbd>Esc</kbd> reverts to whatever was
+active when the panel opened. `index.html#config` and `index.html#sky`
+deep-link to the open panels.
 
 ## Tuning
 

@@ -20,6 +20,14 @@
     --c-blue: 1;
     --c-pink: 1;
 
+    /* ---- sky knobs (config modal, "s") ---- */
+    --moon-phase: 53;      /* 0..100: shadow disc sweeps across the moon;     */
+                           /* 0/100 = full, 50 = new, in between = crescents  */
+    --twilight: 0;         /* 0..100: dusk glow rising from the horizon       */
+    --star-bright: 80;     /* 0..100: star field opacity                      */
+    --star-density: 100;   /* scales the star tiling; higher = more stars     */
+    --mtn: 1;              /* mountains on / off                              */
+
     /* The toggles recolor a FIXED gradient shape — they never change the
        silhouette. Each stop has a priority chain (its native color, then
        fallbacks); these weights pick the first enabled color in the chain.
@@ -76,9 +84,27 @@
       radial-gradient(1px 1px at 30% 85%, rgba(255,255,255,.6), transparent 100%),
       radial-gradient(2px 2px at 60% 10%, rgba(255,255,255,.8), transparent 100%);
     background-size:
-      340px 340px, 280px 280px, 420px 420px,
-      300px 300px, 380px 380px, 520px 520px;
-    opacity: .8;
+      calc(34000px / var(--star-density)) calc(34000px / var(--star-density)),
+      calc(28000px / var(--star-density)) calc(28000px / var(--star-density)),
+      calc(42000px / var(--star-density)) calc(42000px / var(--star-density)),
+      calc(30000px / var(--star-density)) calc(30000px / var(--star-density)),
+      calc(38000px / var(--star-density)) calc(38000px / var(--star-density)),
+      calc(52000px / var(--star-density)) calc(52000px / var(--star-density));
+    /* stars dim a little as twilight brightens the sky */
+    opacity: calc(var(--star-bright) / 100 * (1 - var(--twilight) / 250));
+  }
+
+  /* dusk glow rising from the horizon, sits behind the mountains */
+  .twilight {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(to top,
+        rgba(125, 175, 215, .90)  0%,
+        rgba( 80, 130, 190, .50) 20%,
+        rgba( 45,  90, 160, .22) 42%,
+        transparent 65%);
+    opacity: calc(var(--twilight) / 100);
   }
 
   /* soft ambient glow washing up from behind the ribbon */
@@ -209,6 +235,7 @@
   .mountains {
     position: absolute;
     inset: auto 0 0 0;
+    opacity: var(--mtn);
     height: 30%;
     background: #0b1c33;
     clip-path: polygon(
@@ -230,8 +257,11 @@
     width: 46px;
     height: 46px;
     border-radius: 50%;
-    /* crescent: light disc with an offset dark disc punched over it */
-    background: radial-gradient(circle at 66% 36%, transparent 58%, #f4f0d8 60%);
+    /* phases: a same-size shadow disc slides across the lit disc; its
+       center goes from far left (full) through 50% (new) to far right */
+    background:
+      radial-gradient(circle at calc((var(--moon-phase) * 5 - 200) * 1%) 36%,
+        transparent 58%, #f4f0d8 60%);
     filter: drop-shadow(0 0 14px rgba(244, 240, 216, .35));
   }
 
@@ -310,6 +340,7 @@
 <body>
   <div class="scene">
     <div class="stars"></div>
+    <div class="twilight"></div>
     <div class="glow"></div>
     <div class="ribbon"></div>
     <div class="moon"></div>
@@ -319,42 +350,70 @@
 
   <div class="config" id="config" role="dialog" aria-modal="true" aria-labelledby="cfg-title" hidden>
     <h2 id="cfg-title">Aurora config</h2>
-    <div id="cfg-rows"></div>
+    <div class="rows"></div>
     <p class="hint"><kbd>Enter</kbd> save &middot; <kbd>Esc</kbd> revert</p>
   </div>
 
-  <div class="keyhint">press <kbd>c</kbd> to configure</div>
+  <div class="config" id="sky" role="dialog" aria-modal="true" aria-labelledby="sky-title" hidden>
+    <h2 id="sky-title">Sky config</h2>
+    <div class="rows"></div>
+    <p class="hint"><kbd>Enter</kbd> save &middot; <kbd>Esc</kbd> revert</p>
+  </div>
+
+  <div class="keyhint"><kbd>c</kbd> aurora &middot; <kbd>s</kbd> sky</div>
 
   <script>
-    const KNOBS = [
-      { key: 'slices',  label: 'Curtain slices',      min: 40,   max: 300,  step: 10 },
-      { key: 'persp',   label: 'Camera focal length', min: 300,  max: 1200, step: 10 },
-      { key: 'edge-y',  label: 'Tail altitude',       min: -300, max: 100,  step: 10 },
-      { key: 'climb',   label: 'Approach climb',      min: 0,    max: 500,  step: 10 },
-      { key: 'x-amp',   label: 'Snake amplitude',     min: 0,    max: 1200, step: 10 },
-      { key: 'x-freq',  label: 'Snake frequency',     min: 180,  max: 900,  step: 10 },
-      { key: 'rip-amp', label: 'Ripple amplitude',    min: 0,    max: 200,  step: 5 },
-      { key: 'z-amp',   label: 'Depth wave',          min: 0,    max: 180,  step: 5 },
+    const PANELS = [
+      {
+        id: 'config',
+        hotkey: 'c',
+        knobs: [
+          { key: 'slices',  label: 'Curtain slices',      min: 40,   max: 300,  step: 10 },
+          { key: 'persp',   label: 'Camera focal length', min: 300,  max: 1200, step: 10 },
+          { key: 'edge-y',  label: 'Tail altitude',       min: -300, max: 100,  step: 10 },
+          { key: 'climb',   label: 'Approach climb',      min: 0,    max: 500,  step: 10 },
+          { key: 'x-amp',   label: 'Snake amplitude',     min: 0,    max: 1200, step: 10 },
+          { key: 'x-freq',  label: 'Snake frequency',     min: 180,  max: 900,  step: 10 },
+          { key: 'rip-amp', label: 'Ripple amplitude',    min: 0,    max: 200,  step: 5 },
+          { key: 'z-amp',   label: 'Depth wave',          min: 0,    max: 180,  step: 5 },
+        ],
+        toggles: {
+          label: 'Colors',
+          items: [
+            { key: 'c-green', label: 'Green' },
+            { key: 'c-blue',  label: 'Blue'  },
+            { key: 'c-pink',  label: 'Pink'  },
+          ],
+        },
+      },
+      {
+        id: 'sky',
+        hotkey: 's',
+        knobs: [
+          { key: 'moon-phase',   label: 'Moon phase',      min: 0,  max: 100, step: 1  },
+          { key: 'twilight',     label: 'Twilight',        min: 0,  max: 100, step: 5  },
+          { key: 'star-bright',  label: 'Star brightness', min: 0,  max: 100, step: 5  },
+          { key: 'star-density', label: 'Star density',    min: 30, max: 250, step: 10 },
+        ],
+        toggles: {
+          label: 'Scenery',
+          items: [{ key: 'mtn', label: 'Mountains' }],
+        },
+      },
     ];
-    const TOGGLES = [
-      { key: 'c-green', label: 'Green' },
-      { key: 'c-blue',  label: 'Blue'  },
-      { key: 'c-pink',  label: 'Pink'  },
-    ];
-    const ALL_KEYS = [...KNOBS, ...TOGGLES];
     const STORAGE_KEY = 'aurora-config';
 
     const root = document.documentElement;
     const ribbon = document.querySelector('.ribbon');
-    const modal = document.getElementById('config');
-    const rows = document.getElementById('cfg-rows');
+    const ALL = PANELS.flatMap(p => [...p.knobs, ...p.toggles.items]);
 
-    const defaults = Object.fromEntries(ALL_KEYS.map(k =>
+    const defaults = Object.fromEntries(ALL.map(k =>
       [k.key, Number(getComputedStyle(root).getPropertyValue('--' + k.key))]));
 
     let stored = {};
     try { stored = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch {}
     const cfg = { ...defaults, ...stored };
+    let active = null;
     let snapshot = null;
     const inputs = {};
 
@@ -368,38 +427,39 @@
     }
 
     function apply() {
-      for (const { key } of ALL_KEYS) root.style.setProperty('--' + key, cfg[key]);
+      for (const { key } of ALL) root.style.setProperty('--' + key, cfg[key]);
       if (ribbon.children.length !== cfg.slices) buildSlices(cfg.slices);
     }
 
-    for (const knob of KNOBS) {
-      const row = document.createElement('label');
-      row.className = 'cfg-row';
-      const name = document.createElement('span');
-      name.textContent = knob.label;
-      const val = document.createElement('output');
-      const input = document.createElement('input');
-      input.type = 'range';
-      input.min = knob.min;
-      input.max = knob.max;
-      input.step = knob.step;
-      input.addEventListener('input', () => {
-        cfg[knob.key] = Number(input.value);
-        val.value = input.value;
-        apply();
-      });
-      inputs[knob.key] = { input, val };
-      row.append(name, val, input);
-      rows.append(row);
-    }
-
-    {
+    for (const panel of PANELS) {
+      panel.el = document.getElementById(panel.id);
+      const rows = panel.el.querySelector('.rows');
+      for (const knob of panel.knobs) {
+        const row = document.createElement('label');
+        row.className = 'cfg-row';
+        const name = document.createElement('span');
+        name.textContent = knob.label;
+        const val = document.createElement('output');
+        const input = document.createElement('input');
+        input.type = 'range';
+        input.min = knob.min;
+        input.max = knob.max;
+        input.step = knob.step;
+        input.addEventListener('input', () => {
+          cfg[knob.key] = Number(input.value);
+          val.value = input.value;
+          apply();
+        });
+        inputs[knob.key] = { input, val };
+        row.append(name, val, input);
+        rows.append(row);
+      }
       const row = document.createElement('div');
       row.className = 'cfg-checks';
       const name = document.createElement('span');
-      name.textContent = 'Colors';
+      name.textContent = panel.toggles.label;
       row.append(name);
-      for (const toggle of TOGGLES) {
+      for (const toggle of panel.toggles.items) {
         const label = document.createElement('label');
         const input = document.createElement('input');
         input.type = 'checkbox';
@@ -414,43 +474,50 @@
       rows.append(row);
     }
 
-    function openModal() {
+    function openPanel(panel) {
       snapshot = { ...cfg };
-      for (const { key } of KNOBS) {
-        inputs[key].input.value = cfg[key];
-        inputs[key].val.value = cfg[key];
+      for (const item of ALL) {
+        const entry = inputs[item.key];
+        if (entry.val) {
+          entry.input.value = cfg[item.key];
+          entry.val.value = cfg[item.key];
+        } else {
+          entry.input.checked = cfg[item.key] === 1;
+        }
       }
-      for (const { key } of TOGGLES) inputs[key].input.checked = cfg[key] === 1;
-      modal.hidden = false;
-      rows.querySelector('input').focus();
+      panel.el.hidden = false;
+      active = panel;
+      panel.el.querySelector('input').focus();
     }
 
-    function closeModal() {
-      modal.hidden = true;
+    function closePanel() {
+      active.el.hidden = true;
+      active = null;
       snapshot = null;
     }
 
     document.addEventListener('keydown', (e) => {
-      if (modal.hidden) {
-        if ((e.key === 'c' || e.key === 'C') && !e.metaKey && !e.ctrlKey && !e.altKey) {
-          openModal();
-        }
+      if (!active) {
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        const panel = PANELS.find(p => p.hotkey === e.key.toLowerCase());
+        if (panel) openPanel(panel);
         return;
       }
       if (e.key === 'Enter') {
         e.preventDefault();
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg)); } catch {}
-        closeModal();
+        closePanel();
       } else if (e.key === 'Escape') {
         e.preventDefault();
         Object.assign(cfg, snapshot);
         apply();
-        closeModal();
+        closePanel();
       }
     });
 
     apply();                                        // initial slice build
-    if (location.hash === '#config') openModal();   // deep link to the panel
+    if (location.hash === '#config') openPanel(PANELS[0]);   // deep links
+    if (location.hash === '#sky') openPanel(PANELS[1]);
   </script>
 </body>
 </html>
