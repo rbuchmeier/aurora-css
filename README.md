@@ -32,7 +32,10 @@ rest of the JavaScript is the optional config panel below.
 
 Press <kbd>c</kbd> to open the in-page config panel. Sliders update the ribbon
 live: slice count, camera focal length, tail altitude, approach climb, and the
-wave shapes. <kbd>Enter</kbd> saves the values to `localStorage` (they survive
+wave shapes. Three color checkboxes toggle the green body, blue fringe, and
+pink tops independently (all off hides the aurora entirely — each gradient
+stop's alpha is gated by a `--c-*` custom property, and the ambient glow
+follows). <kbd>Enter</kbd> saves the values to `localStorage` (they survive
 reloads), <kbd>Esc</kbd> reverts to whatever was active when the panel opened.
 `index.html#config` deep-links to the open panel.
 

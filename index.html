@@ -16,6 +16,9 @@
     --rip-amp: 65;         /* secondary ripple amplitude                      */
     --z-amp: 180;          /* depth wave amplitude — keep <= 180 so depth     */
                            /* stays monotonic (DOM order == paint order)      */
+    --c-green: 1;          /* color toggles, 1 on / 0 off                     */
+    --c-blue: 1;
+    --c-pink: 1;
   }
 
   * { margin: 0; box-sizing: border-box; }
@@ -65,6 +68,8 @@
         rgba(45, 220, 170, .16) 0%,
         rgba(45, 200, 220, .07) 40%,
         transparent 70%);
+    /* no colors lit -> no ambient glow either */
+    opacity: min(1, calc(var(--c-green) + var(--c-blue) + var(--c-pink)));
   }
 
   /* ---------- the ribbon: a fan of slices laid along a 3D sine path ----------
@@ -141,16 +146,17 @@
          stack into a soft bright column instead of a hard line. */
 
     /* bright green lower edge, blue fringe underneath, fading to pink above;
-       curtain height (ragged ray tops + tail taper) via background-size */
+       each band's alpha is gated by its color toggle; curtain height
+       (ragged ray tops + tail taper) via background-size */
     background:
       linear-gradient(to top,
-        rgba( 70, 130, 255, 0)    0%,
-        rgba( 70, 130, 255, .45)  4%,
-        rgba( 90, 255, 180, .95)  9%,
-        rgba( 70, 245, 185, .55) 24%,
-        rgba(200, 130, 225, .26) 46%,
-        rgba(255,  90, 190, .09) 72%,
-        rgba(255,  90, 190, 0)   94%)
+        rgb( 70 130 255 / 0)                            0%,
+        rgb( 70 130 255 / calc(.45 * var(--c-blue)))    4%,
+        rgb( 90 255 180 / calc(.95 * var(--c-green)))   9%,
+        rgb( 70 245 185 / calc(.55 * var(--c-green)))  24%,
+        rgb(200 130 225 / calc(.26 * var(--c-pink)))   46%,
+        rgb(255  90 190 / calc(.09 * var(--c-pink)))   72%,
+        rgb(255  90 190 / 0)                           94%)
       bottom / 100% calc((300px + 160px * var(--r)) * var(--taper)) no-repeat;
 
     /* feather the vertical sides so slices melt together */
@@ -226,6 +232,21 @@
     width: 100%;
     accent-color: #6ef2c0;
   }
+  .cfg-checks {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .cfg-checks > span { flex: 1; }
+  .cfg-checks label {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    cursor: pointer;
+  }
+  .cfg-checks input { accent-color: #6ef2c0; margin: 0; }
+
   .config .hint {
     margin-top: 6px;
     color: rgba(207, 214, 255, .55);
@@ -277,6 +298,12 @@
       { key: 'rip-amp', label: 'Ripple amplitude',    min: 0,    max: 200,  step: 5 },
       { key: 'z-amp',   label: 'Depth wave',          min: 0,    max: 180,  step: 5 },
     ];
+    const TOGGLES = [
+      { key: 'c-green', label: 'Green' },
+      { key: 'c-blue',  label: 'Blue'  },
+      { key: 'c-pink',  label: 'Pink'  },
+    ];
+    const ALL_KEYS = [...KNOBS, ...TOGGLES];
     const STORAGE_KEY = 'aurora-config';
 
     const root = document.documentElement;
@@ -284,7 +311,7 @@
     const modal = document.getElementById('config');
     const rows = document.getElementById('cfg-rows');
 
-    const defaults = Object.fromEntries(KNOBS.map(k =>
+    const defaults = Object.fromEntries(ALL_KEYS.map(k =>
       [k.key, Number(getComputedStyle(root).getPropertyValue('--' + k.key))]));
 
     let stored = {};
@@ -303,7 +330,7 @@
     }
 
     function apply() {
-      for (const { key } of KNOBS) root.style.setProperty('--' + key, cfg[key]);
+      for (const { key } of ALL_KEYS) root.style.setProperty('--' + key, cfg[key]);
       if (ribbon.children.length !== cfg.slices) buildSlices(cfg.slices);
     }
 
@@ -328,12 +355,34 @@
       rows.append(row);
     }
 
+    {
+      const row = document.createElement('div');
+      row.className = 'cfg-checks';
+      const name = document.createElement('span');
+      name.textContent = 'Colors';
+      row.append(name);
+      for (const toggle of TOGGLES) {
+        const label = document.createElement('label');
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.addEventListener('change', () => {
+          cfg[toggle.key] = input.checked ? 1 : 0;
+          apply();
+        });
+        inputs[toggle.key] = { input };
+        label.append(input, toggle.label);
+        row.append(label);
+      }
+      rows.append(row);
+    }
+
     function openModal() {
       snapshot = { ...cfg };
       for (const { key } of KNOBS) {
         inputs[key].input.value = cfg[key];
         inputs[key].val.value = cfg[key];
       }
+      for (const { key } of TOGGLES) inputs[key].input.checked = cfg[key] === 1;
       modal.hidden = false;
       rows.querySelector('input').focus();
     }
