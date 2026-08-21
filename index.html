@@ -143,14 +143,14 @@
   /* three faint sister ribbons deeper in the sky — same slice geometry,
      different phases, scaled toward the horizon and dimmed. They come
      before the main ribbon in the DOM, so it always paints over them. */
-  .ribbon.r2 { left: 44%; top: 59%; --fade: .45;
+  .ribbon.r2 { left: 16%; top: 61%; --fade: .45;
                --ph-x: 40deg; --ph-rip: 280deg; --ph-z: 200deg; --ph-y: 100deg;
-               transform: scale(.38);
+               transform: scale(-.38, .38);
                filter: blur(1px);
                opacity: clamp(0, var(--ribbons) - 1, 1); }
-  .ribbon.r3 { left: 1%; top: 60%; --fade: .32;
+  .ribbon.r3 { left: 24%; top: 58%; --fade: .32;
                --ph-x: 260deg; --ph-rip: 160deg; --ph-z: 320deg; --ph-y: 10deg;
-               transform: scale(.22);
+               transform: scale(-.22, .22);
                filter: blur(1.5px);
                opacity: clamp(0, var(--ribbons) - 2, 1); }
   .ribbon.r4 { left: 87%; top: 62%; --fade: .34;

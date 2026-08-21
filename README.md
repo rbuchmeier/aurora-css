@@ -42,10 +42,10 @@ While a panel is open, either hotkey acts like <kbd>Enter</kbd>: the open
 panel saves and closes, and if it was the other panel's key, that panel
 opens next. Sliders update the scene live. The aurora panel drives the
 ribbons: how many are visible (1 = just the main ribbon, then each step
-adds a sister — 2 the band layered under the main tail, 3 the far-left
-band, 4 the far-right wisp; all four arcs share one elevation), slice
-count, camera focal length, tail altitude, approach climb, and the wave
-shapes. Three color checkboxes toggle the green body, blue fringe, and
+adds a sister — 2 and 3 the nested left-side pair, mirrored so they travel
+leftward out of the frame, 4 the far-right wisp; all four arcs share one
+elevation), slice count, camera focal length, tail altitude, approach
+climb, and the wave shapes. Three color checkboxes toggle the green body, blue fringe, and
 pink tops. The ribbon's shape never changes — the gradient's alpha profile is
 fixed, and each stop's RGB is a priority-weighted blend of whichever colors
 are on (each stop falls back to the next color in its chain, so e.g. blue and
