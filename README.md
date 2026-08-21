@@ -25,13 +25,22 @@ order — plain painter's-algorithm layering with zero 3D plane-splitting
 artifacts. The bottom edge also climbs the sky monotonically as it approaches,
 so the bright lower line stays unobstructed along the entire wave.
 
-The only JavaScript is a five-line loop that stamps out the slice divs.
+The rendering itself needs only a loop that stamps out the slice divs; the
+rest of the JavaScript is the optional config panel below.
+
+## Config modal
+
+Press <kbd>c</kbd> to open the in-page config panel. Sliders update the ribbon
+live: slice count, camera focal length, tail altitude, approach climb, and the
+wave shapes. <kbd>Enter</kbd> saves the values to `localStorage` (they survive
+reloads), <kbd>Esc</kbd> reverts to whatever was active when the panel opened.
+`index.html#config` deep-links to the open panel.
 
 ## Tuning
 
-All knobs live in the stylesheet:
-
-- `--slices`, `--persp`, `--edge-y` on `:root`;
-- the wave shapes in `--x` / `--z` / `--y` (keep the `--z` wave amplitude
-  under ~181 so depth stays monotonic, and scale the matching `cos` terms in
-  `--dx` / `--dz` by amplitude × frequency-in-radians when you change a wave).
+All knobs are numeric custom properties on `:root` (`--slices`, `--persp`,
+`--edge-y`, `--climb`, `--x-amp`, `--x-freq`, `--rip-amp`, `--z-amp`) — the
+slice CSS derives the tangent coefficients from them with `amp × freq × π/180`,
+so changing a knob can never desync the slice orientations. The one hard rule:
+keep `--z-amp` ≤ 180 (the modal's slider is capped there) so depth stays
+monotonic and DOM order keeps matching depth order.

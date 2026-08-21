@@ -6,10 +6,16 @@
 <title>Aurora Ribbon — CSS</title>
 <style>
   :root {
-    /* ---- ribbon tuning knobs ---- */
-    --slices: 150;         /* number of vertical curtain slices          */
-    --persp: 600px;        /* camera focal length                        */
-    --edge-y: -60;         /* bottom-edge height at the far tail         */
+    /* ---- ribbon tuning knobs (all editable in the config modal, "c") ---- */
+    --slices: 150;         /* number of vertical curtain slices               */
+    --persp: 600;          /* camera focal length, px                         */
+    --edge-y: -60;         /* bottom-edge height at the far tail (up = neg.)  */
+    --climb: 240;          /* how much the edge climbs as the ribbon nears    */
+    --x-amp: 780;          /* main snake amplitude                            */
+    --x-freq: 540;         /* main snake frequency, deg over the full path    */
+    --rip-amp: 65;         /* secondary ripple amplitude                      */
+    --z-amp: 180;          /* depth wave amplitude — keep <= 180 so depth     */
+                           /* stays monotonic (DOM order == paint order)      */
   }
 
   * { margin: 0; box-sizing: border-box; }
@@ -33,7 +39,7 @@
         #0a1838 100%);
   }
 
-  /* ---------- star field: three tiled layers of tiny radial dots ---------- */
+  /* ---------- star field: tiled layers of tiny radial dots ---------- */
   .stars {
     position: absolute;
     inset: 0;
@@ -80,20 +86,29 @@
     /* serpentine path: the x-wave dominates the linear sweep, so the ribbon
        snakes right -> back left -> out right as it approaches; z only ever
        increases (monotonic depth = no slice intersections = no glitches) */
-    --x: calc(-380 + 1500 * var(--t) + 780 * sin(var(--t) * 540deg + 150deg)
-              + 65 * sin(var(--t) * 1260deg + 80deg));
-    --z: calc(-2100 + 2150 * var(--t) + 180 * sin(var(--t) * 680deg + 60deg));
+    --x: calc(-380 + 1500 * var(--t)
+              + var(--x-amp) * sin(var(--t) * var(--x-freq) * 1deg + 150deg)
+              + var(--rip-amp) * sin(var(--t) * 1260deg + 80deg));
+    --z: calc(-2100 + 2150 * var(--t)
+              + var(--z-amp) * sin(var(--t) * 680deg + 60deg));
+
     /* altitude climbs steadily as the ribbon approaches: on screen the far
        tail hugs the horizon and each closer band sits ABOVE the farther
        ones, so the bright bottom edge stays unobstructed the whole way
        (the near end runs off the top of the frame) */
-    --y: calc(var(--edge-y) - 240 * var(--t) * var(--t)
-              - 30 * sin(var(--t) * 540deg - 120deg));
+    --y: calc(var(--edge-y) - var(--climb) * var(--t) * var(--t)
+              - 30 * sin(var(--t) * var(--x-freq) * 1deg - 120deg));
 
-    /* analytic tangent of the path above (d/dt), used to aim each slice */
-    --dx: calc(1500 + 7351 * cos(var(--t) * 540deg + 150deg)
-               + 1429 * cos(var(--t) * 1260deg + 80deg));
-    --dz: calc(2150 + 2136 * cos(var(--t) * 680deg + 60deg));
+    /* analytic tangent of the path above (d/dt), used to aim each slice;
+       the amp * freq * pi/180 factors keep it in sync with the knobs */
+    --dx: calc(1500
+               + var(--x-amp) * var(--x-freq) * pi / 180
+                 * cos(var(--t) * var(--x-freq) * 1deg + 150deg)
+               + var(--rip-amp) * 1260 * pi / 180
+                 * cos(var(--t) * 1260deg + 80deg));
+    --dz: calc(2150
+               + var(--z-amp) * 680 * pi / 180
+                 * cos(var(--t) * 680deg + 60deg));
 
     /* cheap pseudo-randoms per slice: jagged ray tops + edge decoherence */
     --r: calc(0.5 + 0.5 * sin(var(--i) * 127.1));
@@ -113,7 +128,7 @@
     top: -460px;
     transform-origin: 50% 100%;
     transform:
-      perspective(var(--persp))
+      perspective(calc(var(--persp) * 1px))
       translate3d(calc((var(--x) + var(--jx)) * 1px),
                   calc((var(--y) + var(--jy)) * 1px),
                   calc(var(--z) * 1px))
@@ -175,6 +190,62 @@
     background: radial-gradient(circle at 66% 36%, transparent 58%, #f4f0d8 60%);
     filter: drop-shadow(0 0 14px rgba(244, 240, 216, .35));
   }
+
+  /* ---------- config modal ---------- */
+  .config {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    width: 320px;
+    padding: 20px 24px;
+    border: 1px solid rgba(160, 180, 255, .18);
+    border-radius: 14px;
+    background: rgba(8, 12, 40, .82);
+    backdrop-filter: blur(12px);
+    color: #cfd6ff;
+    font: 13px/1.45 system-ui, sans-serif;
+  }
+  .config[hidden] { display: none; }
+  .config h2 {
+    margin: 0 0 14px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #eaf0ff;
+  }
+  .cfg-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0 10px;
+    margin-bottom: 12px;
+  }
+  .cfg-row output { color: #6ef2c0; font-variant-numeric: tabular-nums; }
+  .cfg-row input {
+    grid-column: 1 / -1;
+    width: 100%;
+    accent-color: #6ef2c0;
+  }
+  .config .hint {
+    margin-top: 6px;
+    color: rgba(207, 214, 255, .55);
+  }
+  kbd {
+    padding: 1px 5px;
+    border: 1px solid rgba(160, 180, 255, .3);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    font: inherit;
+  }
+
+  .keyhint {
+    position: fixed;
+    right: 14px;
+    bottom: 10px;
+    z-index: 5;
+    color: rgba(207, 214, 255, .45);
+    font: 12px system-ui, sans-serif;
+  }
 </style>
 </head>
 <body>
@@ -187,15 +258,112 @@
     <div class="mountains near"></div>
   </div>
 
+  <div class="config" id="config" role="dialog" aria-modal="true" aria-labelledby="cfg-title" hidden>
+    <h2 id="cfg-title">Aurora config</h2>
+    <div id="cfg-rows"></div>
+    <p class="hint"><kbd>Enter</kbd> save &middot; <kbd>Esc</kbd> revert</p>
+  </div>
+
+  <div class="keyhint">press <kbd>c</kbd> to configure</div>
+
   <script>
-    // Only structural: stamp out the slice divs. All geometry/look is CSS.
+    const KNOBS = [
+      { key: 'slices',  label: 'Curtain slices',      min: 40,   max: 300,  step: 10 },
+      { key: 'persp',   label: 'Camera focal length', min: 300,  max: 1200, step: 10 },
+      { key: 'edge-y',  label: 'Tail altitude',       min: -300, max: 100,  step: 10 },
+      { key: 'climb',   label: 'Approach climb',      min: 0,    max: 500,  step: 10 },
+      { key: 'x-amp',   label: 'Snake amplitude',     min: 0,    max: 1200, step: 10 },
+      { key: 'x-freq',  label: 'Snake frequency',     min: 180,  max: 900,  step: 10 },
+      { key: 'rip-amp', label: 'Ripple amplitude',    min: 0,    max: 200,  step: 5 },
+      { key: 'z-amp',   label: 'Depth wave',          min: 0,    max: 180,  step: 5 },
+    ];
+    const STORAGE_KEY = 'aurora-config';
+
+    const root = document.documentElement;
     const ribbon = document.querySelector('.ribbon');
-    const n = getComputedStyle(document.documentElement).getPropertyValue('--slices');
-    for (let i = 0; i < +n; i++) {
-      const s = document.createElement('div');
-      s.style.setProperty('--i', i);
-      ribbon.append(s);
+    const modal = document.getElementById('config');
+    const rows = document.getElementById('cfg-rows');
+
+    const defaults = Object.fromEntries(KNOBS.map(k =>
+      [k.key, Number(getComputedStyle(root).getPropertyValue('--' + k.key))]));
+
+    let stored = {};
+    try { stored = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch {}
+    const cfg = { ...defaults, ...stored };
+    let snapshot = null;
+    const inputs = {};
+
+    function buildSlices(n) {
+      ribbon.replaceChildren();
+      for (let i = 0; i < n; i++) {
+        const s = document.createElement('div');
+        s.style.setProperty('--i', i);
+        ribbon.append(s);
+      }
     }
+
+    function apply() {
+      for (const { key } of KNOBS) root.style.setProperty('--' + key, cfg[key]);
+      if (ribbon.children.length !== cfg.slices) buildSlices(cfg.slices);
+    }
+
+    for (const knob of KNOBS) {
+      const row = document.createElement('label');
+      row.className = 'cfg-row';
+      const name = document.createElement('span');
+      name.textContent = knob.label;
+      const val = document.createElement('output');
+      const input = document.createElement('input');
+      input.type = 'range';
+      input.min = knob.min;
+      input.max = knob.max;
+      input.step = knob.step;
+      input.addEventListener('input', () => {
+        cfg[knob.key] = Number(input.value);
+        val.value = input.value;
+        apply();
+      });
+      inputs[knob.key] = { input, val };
+      row.append(name, val, input);
+      rows.append(row);
+    }
+
+    function openModal() {
+      snapshot = { ...cfg };
+      for (const { key } of KNOBS) {
+        inputs[key].input.value = cfg[key];
+        inputs[key].val.value = cfg[key];
+      }
+      modal.hidden = false;
+      rows.querySelector('input').focus();
+    }
+
+    function closeModal() {
+      modal.hidden = true;
+      snapshot = null;
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (modal.hidden) {
+        if ((e.key === 'c' || e.key === 'C') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+          openModal();
+        }
+        return;
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg)); } catch {}
+        closeModal();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        Object.assign(cfg, snapshot);
+        apply();
+        closeModal();
+      }
+    });
+
+    apply();                                        // initial slice build
+    if (location.hash === '#config') openModal();   // deep link to the panel
   </script>
 </body>
 </html>
