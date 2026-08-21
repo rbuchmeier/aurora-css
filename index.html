@@ -69,26 +69,29 @@
     background: #030520;
   }
 
-  /* ---------- star field: tiled layers of tiny radial dots ---------- */
+  /* ---------- star field: one div per star, hashed into place in CSS ----------
+     Like the ribbon slices, each star derives everything from its inline --i
+     index with sin() hashes — no tiling, so no repeating pattern. */
   .stars {
     position: absolute;
     inset: 0;
-    background-image:
-      radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,.9), transparent 100%),
-      radial-gradient(1px 1px at 45% 65%, rgba(255,255,255,.8), transparent 100%),
-      radial-gradient(1.5px 1.5px at 70% 35%, rgba(255,255,255,.9), transparent 100%),
-      radial-gradient(1px 1px at 85% 80%, rgba(255,255,255,.7), transparent 100%),
-      radial-gradient(1px 1px at 30% 85%, rgba(255,255,255,.6), transparent 100%),
-      radial-gradient(2px 2px at 60% 10%, rgba(255,255,255,.8), transparent 100%);
-    background-size:
-      calc(34000px / var(--star-density)) calc(34000px / var(--star-density)),
-      calc(28000px / var(--star-density)) calc(28000px / var(--star-density)),
-      calc(42000px / var(--star-density)) calc(42000px / var(--star-density)),
-      calc(30000px / var(--star-density)) calc(30000px / var(--star-density)),
-      calc(38000px / var(--star-density)) calc(38000px / var(--star-density)),
-      calc(52000px / var(--star-density)) calc(52000px / var(--star-density));
     /* stars dim a little as twilight brightens the sky */
     opacity: calc(var(--star-bright) / 100 * (1 - var(--twilight) / 250));
+  }
+
+  .stars > div {
+    --rx: calc(0.5 + 0.5 * sin(var(--i) * 127.1));
+    --ry: calc(0.5 + 0.5 * sin(var(--i) * 311.7));
+    --rs: calc(0.5 + 0.5 * sin(var(--i) * 74.7));
+    --rb: calc(0.5 + 0.5 * sin(var(--i) * 183.3));
+    position: absolute;
+    left: calc(var(--rx) * 100%);
+    top: calc(var(--ry) * 100%);
+    width: calc((0.7 + 1.4 * var(--rs)) * 1px);
+    height: calc((0.7 + 1.4 * var(--rs)) * 1px);
+    border-radius: 50%;
+    background: #fff;
+    opacity: calc(0.25 + 0.75 * var(--rb) * var(--rb));
   }
 
   /* dusk glow rising from the horizon, sits behind the mountains */
@@ -468,9 +471,21 @@
       }
     }
 
+    const stars = document.querySelector('.stars');
+    function buildStars(n) {
+      stars.replaceChildren();
+      // start at 1: --i of 0 would hash every star property to exactly 0.5
+      for (let i = 1; i <= n; i++) {
+        const s = document.createElement('div');
+        s.style.setProperty('--i', i);
+        stars.append(s);
+      }
+    }
+
     function apply() {
       for (const { key } of ALL) root.style.setProperty('--' + key, cfg[key]);
       if (ribbon.children.length !== cfg.slices) buildSlices(cfg.slices);
+      if (stars.children.length !== cfg['star-density']) buildStars(cfg['star-density']);
     }
 
     for (const panel of PANELS) {

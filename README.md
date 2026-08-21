@@ -47,7 +47,10 @@ with true phase geometry: the terminator is an ellipse whose width follows
 to it during gibbous phases), moon size (75–200%), twilight level (a dusk
 gradient rising from the horizon — at 0 the sky is a single flat night color
 top to bottom; stars dim slightly as it brightens), star brightness and
-density, and a mountains on/off toggle.
+density, and a mountains on/off toggle. Stars are one div each — like the
+ribbon slices, every star hashes its own position, size, and brightness in
+CSS from its `--i` index with `sin()`, so the field never repeats; the
+density slider is simply the star count.
 
 Both panels share the same lifecycle: <kbd>Enter</kbd> saves the values to
 `localStorage` (they survive reloads), <kbd>Esc</kbd> reverts to whatever was
