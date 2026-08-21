@@ -21,8 +21,8 @@
     --c-pink: 1;
 
     /* ---- sky knobs (config modal, "s") ---- */
-    --moon-phase: 53;      /* 0..100: shadow disc sweeps across the moon;     */
-                           /* 0/100 = full, 50 = new, in between = crescents  */
+    --moon-phase: 6;       /* 0..200: 0 and 200 = new, 100 = full,            */
+                           /* in between = crescents and gibbous              */
     --moon-size: 100;      /* percent of the base 46px moon; 75..200          */
     --twilight: 0;         /* 0..100: dusk glow rising from the horizon       */
     --star-bright: 80;     /* 0..100: star field opacity                      */
@@ -258,10 +258,12 @@
     width: calc(46px * var(--moon-size) / 100);
     height: calc(46px * var(--moon-size) / 100);
     border-radius: 50%;
-    /* phases: a same-size shadow disc slides across the lit disc; its
-       center goes from far left (full) through 50% (new) to far right */
+    /* phases: a same-size shadow disc slides across the lit disc. Its
+       center sits on the moon at the slider's ends (new) and fully off
+       the disc at 100 (full): x = 300 - 2.5 * |phase - 100| */
     background:
-      radial-gradient(circle at calc((var(--moon-phase) * 5 - 200) * 1%) 36%,
+      radial-gradient(
+        circle at calc((300 - 2.5 * abs(var(--moon-phase) - 100)) * 1%) 36%,
         transparent 58%, #f4f0d8 60%);
     filter: drop-shadow(0 0 14px rgba(244, 240, 216, .35));
   }
@@ -391,7 +393,7 @@
         id: 'sky',
         hotkey: 's',
         knobs: [
-          { key: 'moon-phase',   label: 'Moon phase',      min: 0,  max: 100, step: 1  },
+          { key: 'moon-phase',   label: 'Moon phase',      min: 0,  max: 200, step: 1  },
           { key: 'moon-size',    label: 'Moon size',       min: 75, max: 200, step: 5  },
           { key: 'twilight',     label: 'Twilight',        min: 0,  max: 100, step: 5  },
           { key: 'star-bright',  label: 'Star brightness', min: 0,  max: 100, step: 5  },
