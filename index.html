@@ -257,20 +257,57 @@
     right: 12%;
     width: calc(46px * var(--moon-size) / 100);
     height: calc(46px * var(--moon-size) / 100);
-    border-radius: 50%;
-    /* phases: a shadow disc, slightly larger than the moon, sweeps across
-       it at the same height (no rotation of the crescent). Its explicit
-       radius covers the whole disc at 0/200, so a new moon is invisible.
-       x = mod(104 - 1.04*phase, 208) - 54 slides the shadow off to the
-       LEFT while waxing (lit crescent on the right, 0..100), clearing the
-       disc exactly at 100 (full), then back in from the RIGHT while
-       waning (lit crescent on the left, 100..200). */
-    background:
-      radial-gradient(
-        circle calc(46px * 0.54 * var(--moon-size) / 100)
-        at calc((mod(104 - 1.04 * var(--moon-phase), 208) - 54) * 1%) 50%,
-        transparent 93%, #f4f0d8 100%);
     filter: drop-shadow(0 0 14px rgba(244, 240, 216, .35));
+
+    /* True phase geometry: the terminator is an ellipse whose x-semiaxis
+       follows |cos| of the phase. The lit shape = one half of the disc,
+       plus a lit center ellipse when gibbous, or minus a dark center
+       ellipse when crescent. Quarter = zero-width ellipse (straight
+       terminator); new = the hole swallows the whole half (invisible).
+         --m-ell:  terminator x-semiaxis, % of the box (0..50)
+         --m-side: 1 = waxing (right half lit), 0 = waning (left half)
+         --m-gib:  1 = gibbous (ellipse adds light), 0 = crescent (hole) */
+    --m-ell: calc(50 * abs(cos(var(--moon-phase) * 1.8deg)));
+    --m-side: clamp(0, 100 - var(--moon-phase), 1);
+    --m-gib: clamp(0, 50.5 - abs(var(--moon-phase) - 100), 1);
+  }
+
+  /* the lit half-disc, with the terminator ellipse carved out when crescent
+     (two mask layers intersected: half-plane AND outside-the-ellipse) */
+  .moon::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: #f4f0d8;
+    -webkit-mask-image:
+      linear-gradient(90deg,
+        rgb(0 0 0 / calc(1 - var(--m-side))) 0 50%,
+        rgb(0 0 0 / var(--m-side)) 50% 100%),
+      radial-gradient(calc(var(--m-ell) * 1%) 51% at 50% 50%,
+        rgb(0 0 0 / var(--m-gib)) 97%, #000 100%);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(90deg,
+        rgb(0 0 0 / calc(1 - var(--m-side))) 0 50%,
+        rgb(0 0 0 / var(--m-side)) 50% 100%),
+      radial-gradient(calc(var(--m-ell) * 1%) 51% at 50% 50%,
+        rgb(0 0 0 / var(--m-gib)) 97%, #000 100%);
+    mask-composite: intersect;
+  }
+
+  /* the lit terminator ellipse, shown only in the gibbous phases */
+  .moon::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: calc(var(--m-ell) * 2%);
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: #f4f0d8;
+    opacity: var(--m-gib);
   }
 
   /* ---------- config modal ---------- */
