@@ -7,7 +7,8 @@
 <style>
   :root {
     /* ---- ribbon tuning knobs (all editable in the config modal, "c") ---- */
-    --slices: 150;         /* number of vertical curtain slices               */
+    --ribbons: 4;          /* how many ribbons are visible (1 = just the main) */
+    --slices: 150;         /* number of vertical curtain slices per ribbon    */
     --persp: 600;          /* camera focal length, px                         */
     --edge-y: -60;         /* bottom-edge height at the far tail (up = neg.)  */
     --climb: 240;          /* how much the edge climbs as the ribbon nears    */
@@ -145,15 +146,18 @@
   .ribbon.r2 { left: 8%; top: 52%; --fade: .45;
                --ph-x: 40deg; --ph-rip: 280deg; --ph-z: 200deg; --ph-y: 100deg;
                transform: scale(-.38, .38);
-               filter: blur(1px); }
+               filter: blur(1px);
+               opacity: clamp(0, var(--ribbons) - 1, 1); }
   .ribbon.r3 { left: -2%; top: 15%; --fade: .32;
                --ph-x: 260deg; --ph-rip: 160deg; --ph-z: 320deg; --ph-y: 10deg;
                transform: scale(.26);
-               filter: blur(1.5px); }
+               filter: blur(1.5px);
+               opacity: clamp(0, var(--ribbons) - 2, 1); }
   .ribbon.r4 { left: 42%; top: 10%; --fade: .28;
                --ph-x: 330deg; --ph-rip: 20deg; --ph-z: 130deg; --ph-y: 200deg;
                transform: scale(.18);
-               filter: blur(1.5px); }
+               filter: blur(1.5px);
+               opacity: clamp(0, var(--ribbons) - 3, 1); }
 
   .ribbon > div {
     /* t runs 0 -> 1 from the far end of the ribbon to the near end */
@@ -438,6 +442,7 @@
         id: 'config',
         hotkey: 'c',
         knobs: [
+          { key: 'ribbons', label: 'Ribbons',             min: 1,    max: 4,    step: 1  },
           { key: 'slices',  label: 'Curtain slices',      min: 40,   max: 300,  step: 10 },
           { key: 'persp',   label: 'Camera focal length', min: 300,  max: 1200, step: 10 },
           { key: 'edge-y',  label: 'Tail altitude',       min: -300, max: 100,  step: 10 },
@@ -582,16 +587,20 @@
     }
 
     document.addEventListener('keydown', (e) => {
+      const plain = !(e.metaKey || e.ctrlKey || e.altKey);
+      const panel = plain ? PANELS.find(p => p.hotkey === e.key.toLowerCase()) : null;
       if (!active) {
-        if (e.metaKey || e.ctrlKey || e.altKey) return;
-        const panel = PANELS.find(p => p.hotkey === e.key.toLowerCase());
         if (panel) openPanel(panel);
         return;
       }
-      if (e.key === 'Enter') {
+      /* Enter saves; so does any panel hotkey — the current panel's own key
+         just saves & closes, the other panel's key saves & switches */
+      if (e.key === 'Enter' || panel) {
         e.preventDefault();
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg)); } catch {}
+        const was = active;
         closePanel();
+        if (panel && panel !== was) openPanel(panel);
       } else if (e.key === 'Escape') {
         e.preventDefault();
         Object.assign(cfg, snapshot);
