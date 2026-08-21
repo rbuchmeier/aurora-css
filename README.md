@@ -33,9 +33,12 @@ rest of the JavaScript is the optional config panel below.
 Press <kbd>c</kbd> to open the in-page config panel. Sliders update the ribbon
 live: slice count, camera focal length, tail altitude, approach climb, and the
 wave shapes. Three color checkboxes toggle the green body, blue fringe, and
-pink tops independently (all off hides the aurora entirely — each gradient
-stop's alpha is gated by a `--c-*` custom property, and the ambient glow
-follows). <kbd>Enter</kbd> saves the values to `localStorage` (they survive
+pink tops. The ribbon's shape never changes — the gradient's alpha profile is
+fixed, and each stop's RGB is a priority-weighted blend of whichever colors
+are on (each stop falls back to the next color in its chain, so e.g. blue and
+pink meet where green used to be, and green alone fills the whole curtain).
+All three off hides the aurora entirely. <kbd>Enter</kbd> saves the values to
+`localStorage` (they survive
 reloads), <kbd>Esc</kbd> reverts to whatever was active when the panel opened.
 `index.html#config` deep-links to the open panel.
 

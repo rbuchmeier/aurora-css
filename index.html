@@ -19,6 +19,28 @@
     --c-green: 1;          /* color toggles, 1 on / 0 off                     */
     --c-blue: 1;
     --c-pink: 1;
+
+    /* The toggles recolor a FIXED gradient shape — they never change the
+       silhouette. Each stop has a priority chain (its native color, then
+       fallbacks); these weights pick the first enabled color in the chain.
+       --c-any gates the whole alpha profile: all off -> ribbon disappears. */
+    --c-any: min(1, calc(var(--c-green) + var(--c-blue) + var(--c-pink)));
+    /* fringe stop: blue, else green, else pink */
+    --w-fr-b: var(--c-blue);
+    --w-fr-g: calc(var(--c-green) * (1 - var(--c-blue)));
+    --w-fr-p: calc(var(--c-pink) * (1 - var(--c-blue)) * (1 - var(--c-green)));
+    /* bright-edge stop: green, else blue, else pink */
+    --w-ed-g: var(--c-green);
+    --w-ed-b: calc(var(--c-blue) * (1 - var(--c-green)));
+    --w-ed-p: calc(var(--c-pink) * (1 - var(--c-green)) * (1 - var(--c-blue)));
+    /* body stop: green, else pink (so pink reaches down to touch blue), else blue */
+    --w-bd-g: var(--c-green);
+    --w-bd-p: calc(var(--c-pink) * (1 - var(--c-green)));
+    --w-bd-b: calc(var(--c-blue) * (1 - var(--c-green)) * (1 - var(--c-pink)));
+    /* top stops: pink, else green, else blue */
+    --w-tp-p: var(--c-pink);
+    --w-tp-g: calc(var(--c-green) * (1 - var(--c-pink)));
+    --w-tp-b: calc(var(--c-blue) * (1 - var(--c-pink)) * (1 - var(--c-green)));
   }
 
   * { margin: 0; box-sizing: border-box; }
@@ -69,7 +91,7 @@
         rgba(45, 200, 220, .07) 40%,
         transparent 70%);
     /* no colors lit -> no ambient glow either */
-    opacity: min(1, calc(var(--c-green) + var(--c-blue) + var(--c-pink)));
+    opacity: var(--c-any);
   }
 
   /* ---------- the ribbon: a fan of slices laid along a 3D sine path ----------
@@ -145,18 +167,34 @@
          The clamp keeps fold-apex slices from going knife-edge-on: they
          stack into a soft bright column instead of a hard line. */
 
-    /* bright green lower edge, blue fringe underneath, fading to pink above;
-       each band's alpha is gated by its color toggle; curtain height
-       (ragged ray tops + tail taper) via background-size */
+    /* bright green lower edge, blue fringe underneath, fading to pink above.
+       The alpha profile (the shape) is fixed; each stop's RGB is the
+       priority-weighted blend of whichever colors are toggled on.
+       Curtain height (ragged ray tops + tail taper) via background-size. */
     background:
       linear-gradient(to top,
-        rgb( 70 130 255 / 0)                            0%,
-        rgb( 70 130 255 / calc(.45 * var(--c-blue)))    4%,
-        rgb( 90 255 180 / calc(.95 * var(--c-green)))   9%,
-        rgb( 70 245 185 / calc(.55 * var(--c-green)))  24%,
-        rgb(200 130 225 / calc(.26 * var(--c-pink)))   46%,
-        rgb(255  90 190 / calc(.09 * var(--c-pink)))   72%,
-        rgb(255  90 190 / 0)                           94%)
+        rgb(70 130 255 / 0) 0%,
+        rgb(calc( 70*var(--w-fr-b) +  85*var(--w-fr-g) + 255*var(--w-fr-p))
+            calc(130*var(--w-fr-b) + 255*var(--w-fr-g) +  90*var(--w-fr-p))
+            calc(255*var(--w-fr-b) + 185*var(--w-fr-g) + 190*var(--w-fr-p))
+            / calc(.45 * var(--c-any)))  4%,
+        rgb(calc( 90*var(--w-ed-g) +  70*var(--w-ed-b) + 255*var(--w-ed-p))
+            calc(255*var(--w-ed-g) + 130*var(--w-ed-b) +  90*var(--w-ed-p))
+            calc(180*var(--w-ed-g) + 255*var(--w-ed-b) + 190*var(--w-ed-p))
+            / calc(.95 * var(--c-any)))  9%,
+        rgb(calc( 70*var(--w-bd-g) + 220*var(--w-bd-p) +  70*var(--w-bd-b))
+            calc(245*var(--w-bd-g) + 115*var(--w-bd-p) + 130*var(--w-bd-b))
+            calc(185*var(--w-bd-g) + 210*var(--w-bd-p) + 255*var(--w-bd-b))
+            / calc(.55 * var(--c-any))) 24%,
+        rgb(calc(200*var(--w-tp-p) +  75*var(--w-tp-g) +  80*var(--w-tp-b))
+            calc(130*var(--w-tp-p) + 235*var(--w-tp-g) + 160*var(--w-tp-b))
+            calc(225*var(--w-tp-p) + 190*var(--w-tp-g) + 250*var(--w-tp-b))
+            / calc(.26 * var(--c-any))) 46%,
+        rgb(calc(255*var(--w-tp-p) +  80*var(--w-tp-g) +  70*var(--w-tp-b))
+            calc( 90*var(--w-tp-p) + 225*var(--w-tp-g) + 130*var(--w-tp-b))
+            calc(190*var(--w-tp-p) + 195*var(--w-tp-g) + 255*var(--w-tp-b))
+            / calc(.09 * var(--c-any))) 72%,
+        rgb(255 90 190 / 0) 94%)
       bottom / 100% calc((300px + 160px * var(--r)) * var(--taper)) no-repeat;
 
     /* feather the vertical sides so slices melt together */
