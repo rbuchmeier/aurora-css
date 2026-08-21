@@ -130,7 +130,30 @@
     left: 50%;
     top: 60%;                       /* world origin = vanishing point */
     pointer-events: none;
+    /* per-ribbon wave phases: sister ribbons override these (and scale /
+       mirror / dim the whole thing) to get their own shapes for free */
+    --ph-x: 150deg;
+    --ph-rip: 80deg;
+    --ph-z: 60deg;
+    --ph-y: -120deg;
+    --fade: 1;
   }
+
+  /* three faint sister ribbons deeper in the sky — same slice geometry,
+     different phases, scaled toward the horizon and dimmed. They come
+     before the main ribbon in the DOM, so it always paints over them. */
+  .ribbon.r2 { left: 8%; top: 52%; --fade: .45;
+               --ph-x: 40deg; --ph-rip: 280deg; --ph-z: 200deg; --ph-y: 100deg;
+               transform: scale(-.38, .38);
+               filter: blur(1px); }
+  .ribbon.r3 { left: -2%; top: 15%; --fade: .32;
+               --ph-x: 260deg; --ph-rip: 160deg; --ph-z: 320deg; --ph-y: 10deg;
+               transform: scale(.26);
+               filter: blur(1.5px); }
+  .ribbon.r4 { left: 42%; top: 10%; --fade: .28;
+               --ph-x: 330deg; --ph-rip: 20deg; --ph-z: 130deg; --ph-y: 200deg;
+               transform: scale(.18);
+               filter: blur(1.5px); }
 
   .ribbon > div {
     /* t runs 0 -> 1 from the far end of the ribbon to the near end */
@@ -140,28 +163,28 @@
        snakes right -> back left -> out right as it approaches; z only ever
        increases (monotonic depth = no slice intersections = no glitches) */
     --x: calc(-380 + 1500 * var(--t)
-              + var(--x-amp) * sin(var(--t) * var(--x-freq) * 1deg + 150deg)
-              + var(--rip-amp) * sin(var(--t) * 1260deg + 80deg));
+              + var(--x-amp) * sin(var(--t) * var(--x-freq) * 1deg + var(--ph-x))
+              + var(--rip-amp) * sin(var(--t) * 1260deg + var(--ph-rip)));
     --z: calc(-2100 + 2150 * var(--t)
-              + var(--z-amp) * sin(var(--t) * 680deg + 60deg));
+              + var(--z-amp) * sin(var(--t) * 680deg + var(--ph-z)));
 
     /* altitude climbs steadily as the ribbon approaches: on screen the far
        tail hugs the horizon and each closer band sits ABOVE the farther
        ones, so the bright bottom edge stays unobstructed the whole way
        (the near end runs off the top of the frame) */
     --y: calc(var(--edge-y) - var(--climb) * var(--t) * var(--t)
-              - 30 * sin(var(--t) * var(--x-freq) * 1deg - 120deg));
+              - 30 * sin(var(--t) * var(--x-freq) * 1deg + var(--ph-y)));
 
     /* analytic tangent of the path above (d/dt), used to aim each slice;
        the amp * freq * pi/180 factors keep it in sync with the knobs */
     --dx: calc(1500
                + var(--x-amp) * var(--x-freq) * pi / 180
-                 * cos(var(--t) * var(--x-freq) * 1deg + 150deg)
+                 * cos(var(--t) * var(--x-freq) * 1deg + var(--ph-x))
                + var(--rip-amp) * 1260 * pi / 180
-                 * cos(var(--t) * 1260deg + 80deg));
+                 * cos(var(--t) * 1260deg + var(--ph-rip)));
     --dz: calc(2150
                + var(--z-amp) * 680 * pi / 180
-                 * cos(var(--t) * 680deg + 60deg));
+                 * cos(var(--t) * 680deg + var(--ph-z)));
 
     /* cheap pseudo-randoms per slice: jagged ray tops + edge decoherence */
     --r: calc(0.5 + 0.5 * sin(var(--i) * 127.1));
@@ -228,7 +251,7 @@
             mask: linear-gradient(90deg, transparent, #000 33%, #000 67%, transparent);
 
     /* haze: the far end fades out like real atmosphere */
-    opacity: calc((0.22 + 0.70 * var(--t)) * var(--taper) * var(--taper));
+    opacity: calc((0.22 + 0.70 * var(--t)) * var(--taper) * var(--taper) * var(--fade));
   }
 
   /* ---------- foreground: mountain silhouettes ---------- */
@@ -386,6 +409,9 @@
     <div class="stars"></div>
     <div class="twilight"></div>
     <div class="glow"></div>
+    <div class="ribbon r2"></div>
+    <div class="ribbon r3"></div>
+    <div class="ribbon r4"></div>
     <div class="ribbon"></div>
     <div class="moon"></div>
     <div class="mountains"></div>
@@ -449,7 +475,7 @@
     const STORAGE_KEY = 'aurora-config';
 
     const root = document.documentElement;
-    const ribbon = document.querySelector('.ribbon');
+    const ribbons = document.querySelectorAll('.ribbon');
     const ALL = PANELS.flatMap(p => [...p.knobs, ...p.toggles.items]);
 
     const defaults = Object.fromEntries(ALL.map(k =>
@@ -463,11 +489,13 @@
     const inputs = {};
 
     function buildSlices(n) {
-      ribbon.replaceChildren();
-      for (let i = 0; i < n; i++) {
-        const s = document.createElement('div');
-        s.style.setProperty('--i', i);
-        ribbon.append(s);
+      for (const ribbon of ribbons) {
+        ribbon.replaceChildren();
+        for (let i = 0; i < n; i++) {
+          const s = document.createElement('div');
+          s.style.setProperty('--i', i);
+          ribbon.append(s);
+        }
       }
     }
 
@@ -484,7 +512,7 @@
 
     function apply() {
       for (const { key } of ALL) root.style.setProperty('--' + key, cfg[key]);
-      if (ribbon.children.length !== cfg.slices) buildSlices(cfg.slices);
+      if (ribbons[0].children.length !== cfg.slices) buildSlices(cfg.slices);
       if (stars.children.length !== cfg['star-density']) buildStars(cfg['star-density']);
     }
 

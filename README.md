@@ -1,13 +1,13 @@
 # aurora-css
 
-A static aurora borealis ribbon rendered (almost) entirely in CSS — no canvas,
-no SVG, no images.
+A static aurora borealis scene — four wavy ribbons — rendered (almost)
+entirely in CSS: no canvas, no SVG, no images.
 
 Open `index.html` in a browser.
 
 ## How it works
 
-The ribbon is ~150 thin vertical "curtain slice" divs. Each slice:
+Each ribbon is ~150 thin vertical "curtain slice" divs. Each slice:
 
 - computes its position along a serpentine 3D path **in pure CSS**, using
   `calc()` with `sin()`, `cos()`, and `atan2()` driven by one inline `--i` index;
@@ -24,6 +24,13 @@ Depth (z) increases monotonically along the path, so DOM order equals depth
 order — plain painter's-algorithm layering with zero 3D plane-splitting
 artifacts. The bottom edge also climbs the sky monotonically as it approaches,
 so the bright lower line stays unobstructed along the entire wave.
+
+Three faint sister ribbons share the exact same slice geometry: the wave
+phases are custom properties on the ribbon container, so each sister just
+overrides them (plus position, scale, mirroring, a dim factor, and a touch
+of blur) to get its own shape deeper in the sky. They sit before the main
+ribbon in the DOM, so it always paints over them. Every aurora knob drives
+all four at once.
 
 The rendering itself needs only a loop that stamps out the slice divs; the
 rest of the JavaScript is the optional config panel below.
