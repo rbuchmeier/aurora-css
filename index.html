@@ -26,7 +26,7 @@
     --moon-size: 100;      /* percent of the base 46px moon; 75..200          */
     --twilight: 0;         /* 0..100: dusk glow rising from the horizon       */
     --star-bright: 80;     /* 0..100: star field opacity                      */
-    --star-density: 100;   /* scales the star tiling; higher = more stars     */
+    --star-density: 200;   /* number of stars stamped into the sky            */
     --mtn: 1;              /* mountains on / off                              */
 
     /* The toggles recolor a FIXED gradient shape — they never change the
@@ -438,7 +438,7 @@
           { key: 'moon-size',    label: 'Moon size',       min: 75, max: 200, step: 5  },
           { key: 'twilight',     label: 'Twilight',        min: 0,  max: 100, step: 5  },
           { key: 'star-bright',  label: 'Star brightness', min: 0,  max: 100, step: 5  },
-          { key: 'star-density', label: 'Star density',    min: 30, max: 250, step: 10 },
+          { key: 'star-density', label: 'Star density',    min: 30, max: 500, step: 10 },
         ],
         toggles: {
           label: 'Scenery',
