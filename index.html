@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aurora Ribbon — CSS</title>
+<style>
+  :root {
+    /* ---- ribbon tuning knobs ---- */
+    --slices: 150;         /* number of vertical curtain slices          */
+    --persp: 600px;        /* camera focal length                        */
+    --edge-y: -60;         /* bottom-edge height at the far tail         */
+  }
+
+  * { margin: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    overflow: hidden;
+    background: #03041a;
+  }
+
+  .scene {
+    position: fixed;
+    inset: 0;
+    background:
+      linear-gradient(to bottom,
+        #020217 0%,
+        #060a2e 40%,
+        #0b1a44 62%,
+        #123056 78%,
+        #0a1838 100%);
+  }
+
+  /* ---------- star field: three tiled layers of tiny radial dots ---------- */
+  .stars {
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,.9), transparent 100%),
+      radial-gradient(1px 1px at 45% 65%, rgba(255,255,255,.8), transparent 100%),
+      radial-gradient(1.5px 1.5px at 70% 35%, rgba(255,255,255,.9), transparent 100%),
+      radial-gradient(1px 1px at 85% 80%, rgba(255,255,255,.7), transparent 100%),
+      radial-gradient(1px 1px at 30% 85%, rgba(255,255,255,.6), transparent 100%),
+      radial-gradient(2px 2px at 60% 10%, rgba(255,255,255,.8), transparent 100%);
+    background-size:
+      340px 340px, 280px 280px, 420px 420px,
+      300px 300px, 380px 380px, 520px 520px;
+    opacity: .8;
+  }
+
+  /* soft ambient glow washing up from behind the ribbon */
+  .glow {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(120% 65% at 50% 62%,
+        rgba(45, 220, 170, .16) 0%,
+        rgba(45, 200, 220, .07) 40%,
+        transparent 70%);
+  }
+
+  /* ---------- the ribbon: a fan of slices laid along a 3D sine path ----------
+     Each slice carries its own perspective() transform instead of living in a
+     shared preserve-3d scene: identical projection, but painting is plain DOM
+     order. Since z is monotonic along the path, DOM order == depth order, so
+     we get correct layering with zero plane-splitting artifacts. */
+  .ribbon {
+    position: absolute;
+    left: 50%;
+    top: 60%;                       /* world origin = vanishing point */
+    pointer-events: none;
+  }
+
+  .ribbon > div {
+    /* t runs 0 -> 1 from the far end of the ribbon to the near end */
+    --t: calc((var(--i) + 0.5) / var(--slices));
+
+    /* serpentine path: the x-wave dominates the linear sweep, so the ribbon
+       snakes right -> back left -> out right as it approaches; z only ever
+       increases (monotonic depth = no slice intersections = no glitches) */
+    --x: calc(-380 + 1500 * var(--t) + 780 * sin(var(--t) * 540deg + 150deg)
+              + 65 * sin(var(--t) * 1260deg + 80deg));
+    --z: calc(-2100 + 2150 * var(--t) + 180 * sin(var(--t) * 680deg + 60deg));
+    /* altitude climbs steadily as the ribbon approaches: on screen the far
+       tail hugs the horizon and each closer band sits ABOVE the farther
+       ones, so the bright bottom edge stays unobstructed the whole way
+       (the near end runs off the top of the frame) */
+    --y: calc(var(--edge-y) - 240 * var(--t) * var(--t)
+              - 30 * sin(var(--t) * 540deg - 120deg));
+
+    /* analytic tangent of the path above (d/dt), used to aim each slice */
+    --dx: calc(1500 + 7351 * cos(var(--t) * 540deg + 150deg)
+               + 1429 * cos(var(--t) * 1260deg + 80deg));
+    --dz: calc(2150 + 2136 * cos(var(--t) * 680deg + 60deg));
+
+    /* cheap pseudo-randoms per slice: jagged ray tops + edge decoherence */
+    --r: calc(0.5 + 0.5 * sin(var(--i) * 127.1));
+    --r2: calc(0.5 + 0.5 * sin(var(--i) * 311.7));
+    --jx: calc(20 * (var(--r2) - 0.5));
+    --jy: calc(12 * (var(--r) - 0.5));
+
+    /* the far tail grows in from nothing instead of a hard vertical cut */
+    --taper: min(1, calc(var(--t) * 3));
+
+    /* identical boxes, bottom-center pinned to the vanishing point, so every
+       slice shares the same transform-origin (= camera position) */
+    position: absolute;
+    width: 150px;
+    height: 460px;
+    left: -75px;
+    top: -460px;
+    transform-origin: 50% 100%;
+    transform:
+      perspective(var(--persp))
+      translate3d(calc((var(--x) + var(--jx)) * 1px),
+                  calc((var(--y) + var(--jy)) * 1px),
+                  calc(var(--z) * 1px))
+      rotateY(clamp(-58deg,
+        calc(mod(atan2(calc(-1 * var(--dz)), var(--dx)) + 90deg, 180deg) - 90deg),
+        58deg));
+      /* mod() folds the tangent into ±90° — a gradient slab looks the same
+         rotated 180°, so return legs of the snake get the correct slant.
+         The clamp keeps fold-apex slices from going knife-edge-on: they
+         stack into a soft bright column instead of a hard line. */
+
+    /* bright green lower edge, pink fringe underneath, fading to violet above;
+       curtain height (ragged ray tops + tail taper) via background-size */
+    background:
+      linear-gradient(to top,
+        rgba(255,  90, 190, 0)    0%,
+        rgba(255,  90, 190, .45)  4%,
+        rgba( 90, 255, 180, .95)  9%,
+        rgba( 70, 245, 185, .55) 24%,
+        rgba( 45, 205, 230, .28) 46%,
+        rgba(115,  90, 255, .09) 72%,
+        rgba(115,  90, 255, 0)   94%)
+      bottom / 100% calc((300px + 160px * var(--r)) * var(--taper)) no-repeat;
+
+    /* feather the vertical sides so slices melt together */
+    -webkit-mask: linear-gradient(90deg, transparent, #000 33%, #000 67%, transparent);
+            mask: linear-gradient(90deg, transparent, #000 33%, #000 67%, transparent);
+
+    /* haze: the far end fades out like real atmosphere */
+    opacity: calc((0.22 + 0.70 * var(--t)) * var(--taper) * var(--taper));
+  }
+
+  /* ---------- foreground: mountain silhouettes ---------- */
+  .mountains {
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 30%;
+    background: #0b1c33;
+    clip-path: polygon(
+      0% 55%, 7% 38%, 14% 52%, 22% 30%, 30% 55%, 38% 40%, 47% 62%,
+      55% 34%, 63% 50%, 71% 28%, 80% 48%, 88% 36%, 100% 58%, 100% 100%, 0% 100%);
+  }
+  .mountains.near {
+    height: 22%;
+    background: #04091c;
+    clip-path: polygon(
+      0% 62%, 9% 48%, 18% 66%, 28% 42%, 39% 64%, 50% 50%, 60% 70%,
+      72% 46%, 83% 62%, 92% 52%, 100% 68%, 100% 100%, 0% 100%);
+  }
+
+  .moon {
+    position: absolute;
+    top: 10%;
+    right: 12%;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    /* crescent: light disc with an offset dark disc punched over it */
+    background: radial-gradient(circle at 66% 36%, transparent 58%, #f4f0d8 60%);
+    filter: drop-shadow(0 0 14px rgba(244, 240, 216, .35));
+  }
+</style>
+</head>
+<body>
+  <div class="scene">
+    <div class="stars"></div>
+    <div class="glow"></div>
+    <div class="ribbon"></div>
+    <div class="moon"></div>
+    <div class="mountains"></div>
+    <div class="mountains near"></div>
+  </div>
+
+  <script>
+    // Only structural: stamp out the slice divs. All geometry/look is CSS.
+    const ribbon = document.querySelector('.ribbon');
+    const n = getComputedStyle(document.documentElement).getPropertyValue('--slices');
+    for (let i = 0; i < +n; i++) {
+      const s = document.createElement('div');
+      s.style.setProperty('--i', i);
+      ribbon.append(s);
+    }
+  </script>
+</body>
+</html>
