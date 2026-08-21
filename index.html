@@ -58,19 +58,15 @@
 
   body {
     overflow: hidden;
-    background: #03041a;
+    background: #030520;
   }
 
+  /* flat night sky — any horizon light comes from the twilight layer alone,
+     so twilight 0 is genuinely uniform top to bottom */
   .scene {
     position: fixed;
     inset: 0;
-    background:
-      linear-gradient(to bottom,
-        #020217 0%,
-        #060a2e 40%,
-        #0b1a44 62%,
-        #123056 78%,
-        #0a1838 100%);
+    background: #030520;
   }
 
   /* ---------- star field: tiled layers of tiny radial dots ---------- */

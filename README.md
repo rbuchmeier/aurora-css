@@ -44,10 +44,10 @@ The sky panel drives everything else: moon phase (0–200: invisible new moon
 at both ends, full at 100 — waxing lights the right side, waning the left,
 with true phase geometry: the terminator is an ellipse whose width follows
 |cos| of the phase, carved out of a lit half-disc during crescents and added
-to it during gibbous phases), moon size (75–200%), twilight level (a dusk gradient rising
-from the horizon;
-stars dim slightly as it brightens), star brightness and density, and a
-mountains on/off toggle.
+to it during gibbous phases), moon size (75–200%), twilight level (a dusk
+gradient rising from the horizon — at 0 the sky is a single flat night color
+top to bottom; stars dim slightly as it brightens), star brightness and
+density, and a mountains on/off toggle.
 
 Both panels share the same lifecycle: <kbd>Enter</kbd> saves the values to
 `localStorage` (they survive reloads), <kbd>Esc</kbd> reverts to whatever was
