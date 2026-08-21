@@ -23,6 +23,7 @@
     /* ---- sky knobs (config modal, "s") ---- */
     --moon-phase: 53;      /* 0..100: shadow disc sweeps across the moon;     */
                            /* 0/100 = full, 50 = new, in between = crescents  */
+    --moon-size: 100;      /* percent of the base 46px moon; 75..200          */
     --twilight: 0;         /* 0..100: dusk glow rising from the horizon       */
     --star-bright: 80;     /* 0..100: star field opacity                      */
     --star-density: 100;   /* scales the star tiling; higher = more stars     */
@@ -254,8 +255,8 @@
     position: absolute;
     top: 10%;
     right: 12%;
-    width: 46px;
-    height: 46px;
+    width: calc(46px * var(--moon-size) / 100);
+    height: calc(46px * var(--moon-size) / 100);
     border-radius: 50%;
     /* phases: a same-size shadow disc slides across the lit disc; its
        center goes from far left (full) through 50% (new) to far right */
@@ -391,6 +392,7 @@
         hotkey: 's',
         knobs: [
           { key: 'moon-phase',   label: 'Moon phase',      min: 0,  max: 100, step: 1  },
+          { key: 'moon-size',    label: 'Moon size',       min: 75, max: 200, step: 5  },
           { key: 'twilight',     label: 'Twilight',        min: 0,  max: 100, step: 5  },
           { key: 'star-bright',  label: 'Star brightness', min: 0,  max: 100, step: 5  },
           { key: 'star-density', label: 'Star density',    min: 30, max: 250, step: 10 },
