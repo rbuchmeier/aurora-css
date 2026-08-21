@@ -21,7 +21,7 @@
     --c-pink: 1;
 
     /* ---- sky knobs (config modal, "s") ---- */
-    --moon-phase: 6;       /* 0..200: 0 and 200 = new, 100 = full,            */
+    --moon-phase: 12;      /* 0..200: 0 and 200 = new, 100 = full,            */
                            /* in between = crescents and gibbous              */
     --moon-size: 100;      /* percent of the base 46px moon; 75..200          */
     --twilight: 0;         /* 0..100: dusk glow rising from the horizon       */
@@ -258,13 +258,18 @@
     width: calc(46px * var(--moon-size) / 100);
     height: calc(46px * var(--moon-size) / 100);
     border-radius: 50%;
-    /* phases: a same-size shadow disc slides across the lit disc. Its
-       center sits on the moon at the slider's ends (new) and fully off
-       the disc at 100 (full): x = 300 - 2.5 * |phase - 100| */
+    /* phases: a shadow disc, slightly larger than the moon, sweeps across
+       it at the same height (no rotation of the crescent). Its explicit
+       radius covers the whole disc at 0/200, so a new moon is invisible.
+       x = mod(104 - 1.04*phase, 208) - 54 slides the shadow off to the
+       LEFT while waxing (lit crescent on the right, 0..100), clearing the
+       disc exactly at 100 (full), then back in from the RIGHT while
+       waning (lit crescent on the left, 100..200). */
     background:
       radial-gradient(
-        circle at calc((300 - 2.5 * abs(var(--moon-phase) - 100)) * 1%) 36%,
-        transparent 58%, #f4f0d8 60%);
+        circle calc(46px * 0.54 * var(--moon-size) / 100)
+        at calc((mod(104 - 1.04 * var(--moon-phase), 208) - 54) * 1%) 50%,
+        transparent 93%, #f4f0d8 100%);
     filter: drop-shadow(0 0 14px rgba(244, 240, 216, .35));
   }
 

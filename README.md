@@ -40,9 +40,10 @@ are on (each stop falls back to the next color in its chain, so e.g. blue and
 pink meet where green used to be, and green alone fills the whole curtain).
 All three off hides the aurora entirely.
 
-The sky panel drives everything else: moon phase (0–200: new at both ends,
-full at 100, crescents and gibbous in between — a shadow disc sweeps across
-the lit disc), moon size (75–200%), twilight level (a dusk gradient rising
+The sky panel drives everything else: moon phase (0–200: invisible new moon
+at both ends, full at 100 — waxing lights the right side, waning the left,
+via a shadow disc that sweeps horizontally across the lit disc), moon size
+(75–200%), twilight level (a dusk gradient rising
 from the horizon;
 stars dim slightly as it brightens), star brightness and density, and a
 mountains on/off toggle.
